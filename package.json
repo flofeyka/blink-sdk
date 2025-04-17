@@ -10,6 +10,11 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "files": [
+    "dist",
+    "package.json",
+    "README.md"
+  ],
   "scripts": {
     "test": "vitest run",
     "build": "npx rollup -c",

@@ -1,5 +1,5 @@
 import type { ClientRequestArgs } from "http";
-import { ClientOptions, Data, MessageEvent, WebSocket } from "ws";
+import WebSocket, { ClientOptions, Data, MessageEvent } from "ws";
 import { z } from "zod";
 import { JsonRpcError } from ".";
 import schema, { Id } from "./schema";
@@ -11,12 +11,13 @@ export class WebsocketClient {
   private _subscribe: SubscribeFunction;
 
   constructor(readonly address: string | URL, options?: ClientOptions | ClientRequestArgs) {
-    const ws = new WebSocket(address, options);
+    const ws =
+      "WebSocket" in window ? new window.WebSocket(address) : new WebSocket(address, options);
 
     const requests = new Map<Id, RequestHandle>([]);
     const subscriptions = new Map<number, SubscriptionHandle>();
 
-    const open = new Promise<void>((resolve) => ws.once("open", resolve));
+    const open = new Promise<void>((resolve) => ws.addEventListener("open", () => resolve()));
 
     const send = buildSendFunction(ws, open, requests);
     const subscribe = buildSubscribeFunction(send, subscriptions);
@@ -102,7 +103,7 @@ type SubscriptionHandle = {
 };
 
 function buildSendFunction(
-  ws: WebSocket,
+  ws: WebSocket | globalThis.WebSocket,
   open: Promise<void>,
   requests: Map<Id, RequestHandle>
 ): SendFunction {
@@ -169,7 +170,7 @@ function buildMessageHandler(
   requests: Map<Id, RequestHandle>,
   subscriptions: Map<number, SubscriptionHandle>
 ) {
-  return (event: MessageEvent) => {
+  return (event: MessageEvent | globalThis.MessageEvent<any>) => {
     const incomingMessage = parseIncomingMessage(event.data);
 
     if ("id" in incomingMessage) {

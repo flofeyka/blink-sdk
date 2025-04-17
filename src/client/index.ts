@@ -10,9 +10,9 @@ import schema, {
 } from "./schema";
 
 export class BlinkClient extends WebsocketClient {
-  constructor(address: string | URL, token: string | null) {
+  constructor(address: string | URL, token?: string) {
     const options: ClientOptions | ClientRequestArgs = {};
-    if (token !== null) {
+    if (token !== undefined) {
       options.headers = {
         ...options.headers,
         Authorization: `Bearer ${token}`,
