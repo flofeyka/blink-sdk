@@ -1,18 +1,18 @@
-import type { ClientRequestArgs } from "http";
-import WebSocket, { ClientOptions, Data, MessageEvent } from "ws";
+import WebSocket, { Data, MessageEvent } from "ws";
 import { z } from "zod";
-import { JsonRpcError } from ".";
+import { JsonRpcError } from "./error";
+import { JsonRpcClient } from "./interface";
 import schema, { Id } from "./schema";
+import { Subscription } from "./subscription";
 
-export class WebsocketClient {
+export class WebsocketClient implements JsonRpcClient {
   readonly open: Promise<void>;
 
   private _send: SendFunction;
   private _subscribe: SubscribeFunction;
 
-  constructor(readonly address: string | URL, options?: ClientOptions | ClientRequestArgs) {
-    const ws =
-      "WebSocket" in window ? new window.WebSocket(address) : new WebSocket(address, options);
+  constructor(readonly address: string | URL) {
+    const ws = "WebSocket" in window ? new window.WebSocket(address) : new WebSocket(address);
 
     const requests = new Map<Id, RequestHandle>([]);
     const subscriptions = new Map<number, SubscriptionHandle>();
@@ -47,22 +47,24 @@ export class WebsocketClient {
 export class WebsocketClientError extends Error {
   readonly struct: Readonly<WebsocketClientError.Struct>;
 
-  constructor(struct: WebsocketClientError.Struct) {
-    switch (struct.type) {
+  constructor(s: WebsocketClientError.Struct) {
+    switch (s.type) {
       case "InvalidSubscribeMethodReturnType": {
-        super(`invalid subscribe method return type \`${struct.ty}\`, expected \`number\``);
+        super(
+          `WebsocketClientError::InvalidSubscribeMethodReturnType(ty = \`${s.ty}\`, e = \`${s.e}\`)`
+        );
         break;
       }
       case "InvalidUnsubscribeMethodReturnValue": {
-        super(`invalid unsubscribe method return value \`${struct.value}\`, expected \`true\``);
+        super(`WebsocketClientError::InvalidUnsubscribeMethodReturnValue(value = \`${s.value}\`)`);
         break;
       }
       default: {
-        super("unreachable");
+        super("WebsocketClientError::default");
         break;
       }
     }
-    this.struct = Object.freeze(struct);
+    this.struct = Object.freeze(s);
   }
 }
 
@@ -70,18 +72,6 @@ export namespace WebsocketClientError {
   export type Struct =
     | { type: "InvalidSubscribeMethodReturnType"; ty: string; e: z.ZodError }
     | { type: "InvalidUnsubscribeMethodReturnValue"; value: unknown };
-}
-
-export class Subscription {
-  constructor(
-    readonly id: number,
-    readonly method: string,
-    private _unsubscribe: () => Promise<void>
-  ) {}
-
-  unsubscribe(): Promise<void> {
-    return this._unsubscribe();
-  }
 }
 
 type SendFunction = (method: string, ...params: any[]) => Promise<unknown>;

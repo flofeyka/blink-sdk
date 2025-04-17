@@ -31,5 +31,6 @@ const incomingMessage = z.union([response, notification]);
 export type Id = z.infer<typeof id>;
 
 export default {
+  response,
   incomingMessage,
 };
