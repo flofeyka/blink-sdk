@@ -1,19 +1,14 @@
-import { WebsocketClient } from "./jsonrpc/ws";
-import { configDotenv } from "dotenv";
+// import { configDotenv } from "dotenv";
+// import { BlinkClient } from "./client";
 
-async function main() {
-  configDotenv();
+import { BlinkClient } from "./client";
+export { BlinkClient };
 
-  const ws = new WebsocketClient(process.env.URL);
+// async function main() {
+//   configDotenv();
 
-  const subscription = await ws.subscribe(
-    "subscribeTrades",
-    "unsubscribeTrades",
-    (result) => console.dir(result, { depth: null }),
-    { amm: "9kJhmes6wBSUuXP5EnLNwbYaKxD3ajQYP4Xjh9NrrVDS" }
-  );
+//   const client = new BlinkClient(process.env.URL!, process.env.TOKEN!);
+//   console.log(await client.getUsersLeaderboard(150));
+// }
 
-  console.log({ subscription });
-}
-
-main();
+// main();

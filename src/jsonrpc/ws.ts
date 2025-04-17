@@ -1,4 +1,5 @@
-import { Data, MessageEvent, WebSocket } from "ws";
+import type { ClientRequestArgs } from "http";
+import { ClientOptions, Data, MessageEvent, WebSocket } from "ws";
 import { z } from "zod";
 import { JsonRpcError } from ".";
 import schema, { Id } from "./schema";
@@ -9,8 +10,8 @@ export class WebsocketClient {
   private _send: SendFunction;
   private _subscribe: SubscribeFunction;
 
-  constructor(readonly address: string | URL) {
-    const ws = new WebSocket(address);
+  constructor(readonly address: string | URL, options?: ClientOptions | ClientRequestArgs) {
+    const ws = new WebSocket(address, options);
 
     const requests = new Map<Id, RequestHandle>([]);
     const subscriptions = new Map<number, SubscriptionHandle>();
@@ -74,8 +75,12 @@ export class Subscription {
   constructor(
     readonly id: number,
     readonly method: string,
-    readonly unsubscribe: () => Promise<void>
+    private _unsubscribe: () => Promise<void>
   ) {}
+
+  unsubscribe(): Promise<void> {
+    return this._unsubscribe();
+  }
 }
 
 type SendFunction = (method: string, ...params: any[]) => Promise<unknown>;
@@ -165,7 +170,6 @@ function buildMessageHandler(
   subscriptions: Map<number, SubscriptionHandle>
 ) {
   return (event: MessageEvent) => {
-    console.log(event.type);
     const incomingMessage = parseIncomingMessage(event.data);
 
     if ("id" in incomingMessage) {
