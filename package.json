@@ -24,11 +24,15 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "elliptic": "^6.6.1",
     "ws": "^8.18.1",
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@types/bn.js": "^5.1.6",
+    "@types/elliptic": "^6.4.18",
     "@types/ws": "^8.18.1",
+    "bn.js": "^5.2.1",
     "dotenv": "^16.5.0",
     "esbuild": "^0.25.2",
     "rollup": "^4.40.0",

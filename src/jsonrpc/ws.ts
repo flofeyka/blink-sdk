@@ -1,9 +1,17 @@
 import WebSocket, { Data, MessageEvent } from "ws";
 import { z } from "zod";
-import { JsonRpcError } from "./error";
-import { JsonRpcClient } from "./interface";
+import { JsonRpcClient, JsonRpcError, SendFunction } from ".";
 import schema, { Id } from "./schema";
 import { Subscription } from "./subscription";
+
+export type SubscribeFunction = (
+  this: WebsocketClient,
+  send: SendFunction,
+  subscribeMethod: string,
+  unsubscribeMethod: string,
+  callback: (result: unknown) => void,
+  params: any[]
+) => Promise<Subscription>;
 
 export class WebsocketClient implements JsonRpcClient {
   readonly open: Promise<void>;
@@ -12,7 +20,10 @@ export class WebsocketClient implements JsonRpcClient {
   private _subscribe: SubscribeFunction;
 
   constructor(readonly address: string | URL) {
-    const ws = "WebSocket" in window ? new window.WebSocket(address) : new WebSocket(address);
+    const ws =
+      typeof window !== "undefined" && "WebSocket" in window
+        ? new window.WebSocket(address)
+        : new WebSocket(address);
 
     const requests = new Map<Id, RequestHandle>([]);
     const subscriptions = new Map<number, SubscriptionHandle>();
@@ -20,7 +31,7 @@ export class WebsocketClient implements JsonRpcClient {
     const open = new Promise<void>((resolve) => ws.addEventListener("open", () => resolve()));
 
     const send = buildSendFunction(ws, open, requests);
-    const subscribe = buildSubscribeFunction(send, subscriptions);
+    const subscribe = buildSubscribeFunction(subscriptions);
 
     const messageHandler = buildMessageHandler(requests, subscriptions);
     ws.addEventListener("message", messageHandler);
@@ -30,28 +41,33 @@ export class WebsocketClient implements JsonRpcClient {
     this._subscribe = subscribe;
   }
 
-  send(method: string, ...params: any[]): Promise<unknown> {
-    return this._send(method, ...params);
+  isHttp(): boolean {
+    return false;
+  }
+
+  send(method: string, params: any[]): Promise<unknown> {
+    return this._send(method, params);
   }
 
   subscribe(
     subscribeMethod: string,
     unsubscribeMethod: string,
     callback: (result: unknown) => void,
-    ...params: any[]
+    params: any[]
   ): Promise<Subscription> {
-    return this._subscribe(subscribeMethod, unsubscribeMethod, callback, ...params);
+    return this._subscribe(this.send, subscribeMethod, unsubscribeMethod, callback, params);
   }
 }
 
 export class WebsocketClientError extends Error {
-  readonly struct: Readonly<WebsocketClientError.Struct>;
+  readonly s: Readonly<WebsocketClientError.S>;
 
-  constructor(s: WebsocketClientError.Struct) {
+  constructor(s: WebsocketClientError.S) {
     switch (s.type) {
       case "InvalidSubscribeMethodReturnType": {
         super(
-          `WebsocketClientError::InvalidSubscribeMethodReturnType(ty = \`${s.ty}\`, e = \`${s.e}\`)`
+          `WebsocketClientError::InvalidSubscribeMethodReturnType(ty = \`${s.ty}\`, e = \`${s.e}\`)`,
+          { cause: s.e }
         );
         break;
       }
@@ -64,24 +80,15 @@ export class WebsocketClientError extends Error {
         break;
       }
     }
-    this.struct = Object.freeze(s);
+    this.s = Object.freeze(s);
   }
 }
 
 export namespace WebsocketClientError {
-  export type Struct =
+  export type S =
     | { type: "InvalidSubscribeMethodReturnType"; ty: string; e: z.ZodError }
     | { type: "InvalidUnsubscribeMethodReturnValue"; value: unknown };
 }
-
-type SendFunction = (method: string, ...params: any[]) => Promise<unknown>;
-
-type SubscribeFunction = (
-  subscribeMethod: string,
-  unsubscribeMethod: string,
-  callback: (result: unknown) => void,
-  ...params: any[]
-) => Promise<Subscription>;
 
 type RequestHandle = {
   resolve: (data: unknown) => void;
@@ -98,7 +105,7 @@ function buildSendFunction(
   requests: Map<Id, RequestHandle>
 ): SendFunction {
   let id = 0;
-  return async (method: string, ...params: any[]): Promise<unknown> => {
+  return async (method: string, params: any[]): Promise<unknown> => {
     await open;
     id++;
     const message = JSON.stringify({
@@ -114,17 +121,16 @@ function buildSendFunction(
   };
 }
 
-function buildSubscribeFunction(
-  send: SendFunction,
-  subscriptions: Map<number, SubscriptionHandle>
-): SubscribeFunction {
-  return async (
+function buildSubscribeFunction(subscriptions: Map<number, SubscriptionHandle>): SubscribeFunction {
+  return async function (
+    this: WebsocketClient,
+    send: SendFunction,
     subscribeMethod: string,
     unsubscribeMethod: string,
     callback: (result: unknown) => void,
-    ...params: any[]
-  ): Promise<Subscription> => {
-    const result = await send(subscribeMethod, ...params);
+    params: any[]
+  ): Promise<Subscription> {
+    const result = await send.call(this, subscribeMethod, params);
 
     let id: number;
     try {
@@ -142,7 +148,7 @@ function buildSubscribeFunction(
     subscriptions.set(id, { callback });
 
     const unsubscribe = async () => {
-      const result = await send(unsubscribeMethod);
+      const result = await send(unsubscribeMethod, params);
       if (result !== true) {
         throw new WebsocketClientError({
           type: "InvalidUnsubscribeMethodReturnValue",
