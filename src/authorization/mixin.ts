@@ -10,12 +10,18 @@ export const enum MethodKind {
   PrivateNonce,
 }
 
+const getNonceMethod = "getNonce";
+const getNonceResponse = z.number();
+
 export function createAuthorizedClient<TCtor extends new (...args: any[]) => JsonRpcClient>(
   Base: TCtor,
   keyPair: ec.KeyPair | null,
   getMethodKind: (method: string) => MethodKind,
   ...args: ConstructorParameters<TCtor>
 ) {
+  if (getMethodKind(getNonceMethod) !== MethodKind.Private) {
+    throw new AuthorizationError({ tag: "InvalidGetNonceMethodKind" });
+  }
   const Authorized = AuthorizationMixin(Base, keyPair, getMethodKind);
   return new Authorized(...args);
 }
@@ -56,7 +62,7 @@ function AuthorizationMixin<TCtor extends new (...args: any[]) => JsonRpcClient>
     }
 
     public async getNonce(): Promise<number> {
-      const result = await this.send("getNonce", []);
+      const result = await this.send(getNonceMethod, []);
       try {
         return getNonceResponse.parse(result);
       } catch (e) {
@@ -78,6 +84,11 @@ export class AuthorizationError extends Error {
         super("AuthorizationError::KeypairNotProvided");
         break;
       }
+      case "InvalidGetNonceMethodKind": {
+        // "getNonce" method kind can't be Public or PrivateNonce
+        super("AuthorizationError::InvalidGetNonceMethodKind");
+        break;
+      }
       case "Zod": {
         super(`AuthorizationError::Zod(error = ${s.e})`, { cause: s.e });
         break;
@@ -92,7 +103,8 @@ export class AuthorizationError extends Error {
 }
 
 export namespace AuthorizationError {
-  export type S = { tag: "KeypairNotProvided" } | { tag: "Zod"; e: z.ZodError };
+  export type S =
+    | { tag: "KeypairNotProvided" }
+    | { tag: "InvalidGetNonceMethodKind" }
+    | { tag: "Zod"; e: z.ZodError };
 }
-
-const getNonceResponse = z.number();
