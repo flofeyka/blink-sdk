@@ -46,3 +46,32 @@ export async function decryptSessionKeyPair(
 
   return ec.keyFromPrivate(Buffer.from(decrypted));
 }
+
+export async function hashRequest(
+  nonce: bigint | number,
+  method: string,
+  params: any[]
+): Promise<Buffer> {
+  const data = Buffer.concat([
+    toBigInt64Le(BigInt(nonce)),
+    Buffer.from(method, "utf-8"),
+    Buffer.from(JSON.stringify(params), "utf-8"),
+  ]);
+  return Buffer.from(await crypto.subtle.digest("SHA-256", data));
+}
+
+export function encodeAuthorizaionData(nonce: bigint | number, signature: ec.Signature): string {
+  const data = Buffer.concat([
+    toBigInt64Le(BigInt(nonce)),
+    signature.r.toBuffer("le", 32),
+    signature.s.toBuffer("le", 32),
+    Buffer.of(signature.recoveryParam!),
+  ]);
+  return data.toString("base64");
+}
+
+function toBigInt64Le(value: bigint): Buffer {
+  const buffer = Buffer.allocUnsafe(8);
+  buffer.writeBigInt64LE(value);
+  return buffer;
+}

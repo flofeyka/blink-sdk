@@ -1,8 +1,17 @@
 import WebSocket, { Data, MessageEvent } from "ws";
 import { z } from "zod";
-import { JsonRpcClient, SendFunction, SubscribeFunction, JsonRpcError } from ".";
+import { JsonRpcClient, JsonRpcError, SendFunction } from ".";
 import schema, { Id } from "./schema";
 import { Subscription } from "./subscription";
+
+export type SubscribeFunction = (
+  this: WebsocketClient,
+  send: SendFunction,
+  subscribeMethod: string,
+  unsubscribeMethod: string,
+  callback: (result: unknown) => void,
+  params: any[]
+) => Promise<Subscription>;
 
 export class WebsocketClient implements JsonRpcClient {
   readonly open: Promise<void>;
@@ -11,7 +20,10 @@ export class WebsocketClient implements JsonRpcClient {
   private _subscribe: SubscribeFunction;
 
   constructor(readonly address: string | URL) {
-    const ws = "WebSocket" in window ? new window.WebSocket(address) : new WebSocket(address);
+    const ws =
+      typeof window !== "undefined" && "WebSocket" in window
+        ? new window.WebSocket(address)
+        : new WebSocket(address);
 
     const requests = new Map<Id, RequestHandle>([]);
     const subscriptions = new Map<number, SubscriptionHandle>();
@@ -19,7 +31,7 @@ export class WebsocketClient implements JsonRpcClient {
     const open = new Promise<void>((resolve) => ws.addEventListener("open", () => resolve()));
 
     const send = buildSendFunction(ws, open, requests);
-    const subscribe = buildSubscribeFunction(send, subscriptions);
+    const subscribe = buildSubscribeFunction(subscriptions);
 
     const messageHandler = buildMessageHandler(requests, subscriptions);
     ws.addEventListener("message", messageHandler);
@@ -43,7 +55,7 @@ export class WebsocketClient implements JsonRpcClient {
     callback: (result: unknown) => void,
     params: any[]
   ): Promise<Subscription> {
-    return this._subscribe(subscribeMethod, unsubscribeMethod, callback, params);
+    return this._subscribe(this.send, subscribeMethod, unsubscribeMethod, callback, params);
   }
 }
 
@@ -108,17 +120,16 @@ function buildSendFunction(
   };
 }
 
-function buildSubscribeFunction(
-  send: SendFunction,
-  subscriptions: Map<number, SubscriptionHandle>
-): SubscribeFunction {
-  return async (
+function buildSubscribeFunction(subscriptions: Map<number, SubscriptionHandle>): SubscribeFunction {
+  return async function (
+    this: WebsocketClient,
+    send: SendFunction,
     subscribeMethod: string,
     unsubscribeMethod: string,
     callback: (result: unknown) => void,
     params: any[]
-  ): Promise<Subscription> => {
-    const result = await send(subscribeMethod, params);
+  ): Promise<Subscription> {
+    const result = await send.call(this, subscribeMethod, params);
 
     let id: number;
     try {

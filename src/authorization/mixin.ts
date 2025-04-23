@@ -1,7 +1,8 @@
 import { ec } from "elliptic";
 import { z } from "zod";
-import { HttpClient } from "../jsonrpc/http";
+import { encodeAuthorizaionData, hashRequest } from ".";
 import { JsonRpcClient } from "../jsonrpc";
+import { HttpClient } from "../jsonrpc/http";
 
 export const enum MethodKind {
   Public,
@@ -54,7 +55,7 @@ function AuthorizationMixin<TCtor extends new (...args: any[]) => JsonRpcClient>
       }
     }
 
-    async getNonce(): Promise<number> {
+    public async getNonce(): Promise<number> {
       const result = await this.send("getNonce", []);
       try {
         return getNonceResponse.parse(result);
@@ -95,32 +96,3 @@ export namespace AuthorizationError {
 }
 
 const getNonceResponse = z.number();
-
-export async function hashRequest(
-  nonce: bigint | number,
-  method: string,
-  params: any[]
-): Promise<Buffer> {
-  const data = Buffer.concat([
-    toBigInt64Le(BigInt(nonce)),
-    Buffer.from(method, "utf-8"),
-    Buffer.from(JSON.stringify(params), "utf-8"),
-  ]);
-  return Buffer.from(await crypto.subtle.digest("SHA-256", data));
-}
-
-export function encodeAuthorizaionData(nonce: bigint | number, signature: ec.Signature): string {
-  const data = Buffer.concat([
-    toBigInt64Le(BigInt(nonce)),
-    signature.r.toBuffer("le", 32),
-    signature.s.toBuffer("le", 32),
-    Buffer.of(signature.recoveryParam!),
-  ]);
-  return data.toString("base64");
-}
-
-function toBigInt64Le(value: bigint): Buffer {
-  const buffer = Buffer.allocUnsafe(8);
-  buffer.writeBigInt64LE(value);
-  return buffer;
-}

@@ -1,6 +1,6 @@
 import elliptic from "elliptic";
 import { describe, expect, it } from "vitest";
-import { initSession, decryptSessionKeyPair } from ".";
+import { decryptSessionKeyPair, hashRequest, initSession } from ".";
 
 describe(initSession, () => {
   it("pass", () => {
@@ -28,5 +28,12 @@ describe(decryptSessionKeyPair, () => {
     expect(sessionKeyPair.getPrivate("hex")).eq(expectedSessionKeyPair.getPrivate("hex"));
 
     // console.log(sessionKeyPair);
+  });
+});
+
+describe(hashRequest, () => {
+  it("test #0", async () => {
+    const hash = Buffer.from(await hashRequest(0, "", [])).toString("hex");
+    console.log(hash);
   });
 });

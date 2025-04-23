@@ -14,9 +14,6 @@ const slippage = z.number().refine((x) => x <= 10000);
 const tradeSide = z.union([z.literal("buy"), z.literal("sell")]);
 export type TradeSide = z.infer<typeof tradeSide>;
 
-const getNonceResponse = z.number();
-export type GetNonceResponse = z.infer<typeof getNonceResponse>;
-
 const referralsInfo = z.object({
   count: z.string(),
   volume: z.string(),
@@ -88,7 +85,6 @@ export default {
   tipPercentile,
   tradeSide,
   referralsInfo,
-  getNonceResponse,
   userSettings,
   transactionStatus,
   transactionStatusItem,

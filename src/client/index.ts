@@ -5,7 +5,6 @@ import { JsonRpcClient } from "../jsonrpc";
 import { Subscription } from "../jsonrpc/subscription";
 import { WebsocketClient } from "../jsonrpc/ws";
 import schema, {
-  GetNonceResponse,
   GetUsersLeaderboardResponse,
   ReferralsInfo,
   TransactionStatusItem,
@@ -23,7 +22,7 @@ function getMethodKind(method: string): MethodKind {
 }
 
 export class BlinkClient {
-  private constructor(private _client: JsonRpcClient) {}
+  private constructor(private _client: ReturnType<typeof createAuthorizedClient>) {}
 
   static http(url: string | URL, keyPair: ec.KeyPair | null): BlinkClient {
     const client = createAuthorizedClient(HttpClient, keyPair, getMethodKind, url);
@@ -35,6 +34,10 @@ export class BlinkClient {
     return new BlinkClient(client);
   }
 
+  async getNonce(): Promise<number> {
+    return this._client.getNonce();
+  }
+
   async getReferrals(): Promise<ReferralsInfo> {
     const result = await this._client.send("getReferrals", []);
     return schema.referralsInfo.parse(result);
@@ -43,11 +46,6 @@ export class BlinkClient {
   async getSettings(): Promise<UserSettings> {
     const result = await this._client.send("getSettings", []);
     return schema.userSettings.parse(result);
-  }
-
-  async getNonce(): Promise<GetNonceResponse> {
-    const result = await this._client.send("getNonce", []);
-    return schema.getNonceResponse.parse(result);
   }
 
   async getUsersLeaderboard(limit: number): Promise<GetUsersLeaderboardResponse> {
