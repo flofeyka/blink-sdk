@@ -63,7 +63,7 @@ export class HttpClientError extends Error {
         break;
       }
       case "JsonRpc": {
-        super(`HttpClientError::Zod(e = ${s.e})`, { cause: s.e });
+        super(`HttpClientError::JsonRpc(e = ${s.e})`, { cause: s.e });
         break;
       }
       case "ResultUndefined": {

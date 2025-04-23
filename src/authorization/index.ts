@@ -63,8 +63,8 @@ export async function hashRequest(
 export function encodeAuthorizaionData(nonce: bigint | number, signature: ec.Signature): string {
   const data = Buffer.concat([
     toBigInt64Le(BigInt(nonce)),
-    signature.r.toBuffer("le", 32),
-    signature.s.toBuffer("le", 32),
+    signature.r.toBuffer("be", 32),
+    signature.s.toBuffer("be", 32),
     Buffer.of(signature.recoveryParam!),
   ]);
   return data.toString("base64");

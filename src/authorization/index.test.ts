@@ -36,4 +36,9 @@ describe(hashRequest, () => {
     const hash = Buffer.from(await hashRequest(0, "", [])).toString("hex");
     console.log(hash);
   });
+
+  it("getNonce", async () => {
+    const hash = Buffer.from(await hashRequest(0, "getNonce", [])).toString("hex");
+    console.log(hash);
+  });
 });
