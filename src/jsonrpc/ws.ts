@@ -1,7 +1,6 @@
 import WebSocket, { Data, MessageEvent } from "ws";
 import { z } from "zod";
-import { JsonRpcError } from "./error";
-import { JsonRpcClient } from "./interface";
+import { JsonRpcClient, SendFunction, SubscribeFunction, JsonRpcError } from ".";
 import schema, { Id } from "./schema";
 import { Subscription } from "./subscription";
 
@@ -30,17 +29,21 @@ export class WebsocketClient implements JsonRpcClient {
     this._subscribe = subscribe;
   }
 
-  send(method: string, ...params: any[]): Promise<unknown> {
-    return this._send(method, ...params);
+  isHttp(): boolean {
+    return false;
+  }
+
+  send(method: string, params: any[]): Promise<unknown> {
+    return this._send(method, params);
   }
 
   subscribe(
     subscribeMethod: string,
     unsubscribeMethod: string,
     callback: (result: unknown) => void,
-    ...params: any[]
+    params: any[]
   ): Promise<Subscription> {
-    return this._subscribe(subscribeMethod, unsubscribeMethod, callback, ...params);
+    return this._subscribe(subscribeMethod, unsubscribeMethod, callback, params);
   }
 }
 
@@ -74,15 +77,6 @@ export namespace WebsocketClientError {
     | { type: "InvalidUnsubscribeMethodReturnValue"; value: unknown };
 }
 
-type SendFunction = (method: string, ...params: any[]) => Promise<unknown>;
-
-type SubscribeFunction = (
-  subscribeMethod: string,
-  unsubscribeMethod: string,
-  callback: (result: unknown) => void,
-  ...params: any[]
-) => Promise<Subscription>;
-
 type RequestHandle = {
   resolve: (data: unknown) => void;
   reject: (reason?: any) => void;
@@ -98,7 +92,7 @@ function buildSendFunction(
   requests: Map<Id, RequestHandle>
 ): SendFunction {
   let id = 0;
-  return async (method: string, ...params: any[]): Promise<unknown> => {
+  return async (method: string, params: any[]): Promise<unknown> => {
     await open;
     id++;
     const message = JSON.stringify({
@@ -122,9 +116,9 @@ function buildSubscribeFunction(
     subscribeMethod: string,
     unsubscribeMethod: string,
     callback: (result: unknown) => void,
-    ...params: any[]
+    params: any[]
   ): Promise<Subscription> => {
-    const result = await send(subscribeMethod, ...params);
+    const result = await send(subscribeMethod, params);
 
     let id: number;
     try {
@@ -142,7 +136,7 @@ function buildSubscribeFunction(
     subscriptions.set(id, { callback });
 
     const unsubscribe = async () => {
-      const result = await send(unsubscribeMethod);
+      const result = await send(unsubscribeMethod, params);
       if (result !== true) {
         throw new WebsocketClientError({
           type: "InvalidUnsubscribeMethodReturnValue",

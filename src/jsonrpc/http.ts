@@ -1,14 +1,17 @@
 import { z } from "zod";
-import { JsonRpcError } from "./error";
-import { JsonRpcClient } from "./interface";
+import { JsonRpcClient, JsonRpcError } from ".";
 import schema from "./schema";
 
 export class HttpClient implements JsonRpcClient {
   private id = 0;
 
-  constructor(readonly url: string | URL, private options?: HttpClient.Options) {}
+  constructor(readonly url: string | URL) {}
 
-  async send(method: string, ...params: any[]): Promise<unknown> {
+  isHttp(): boolean {
+    return true;
+  }
+
+  async send(method: string, params: any[], options?: HttpClient.Options): Promise<unknown> {
     this.id += 1;
     const id = this.id;
     const response = await fetch(this.url, {
@@ -20,7 +23,7 @@ export class HttpClient implements JsonRpcClient {
         params,
       }),
       headers: {
-        ...this.options?.headers,
+        ...options?.headers,
         "Content-Type": "application/json",
       },
     });

@@ -12,7 +12,7 @@ export async function initSession(): Promise<{ privateKey: string; url: string }
   };
 }
 
-export async function obtainSessionKeyPair(
+export async function decryptSessionKeyPair(
   privateKey: string,
   searchParams: string | URLSearchParams | Record<string, string>
 ): Promise<ec.KeyPair> {

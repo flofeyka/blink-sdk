@@ -1,14 +1,14 @@
 import elliptic from "elliptic";
 import { describe, expect, it } from "vitest";
-import { initSession, obtainSessionKeyPair } from "./authentication";
+import { initSession, decryptSessionKeyPair } from ".";
 
-describe("initSession", () => {
+describe(initSession, () => {
   it("pass", () => {
     console.log(initSession());
   });
 });
 
-describe("obtainSessionKey", () => {
+describe(decryptSessionKeyPair, () => {
   it("pass", async () => {
     const privateKey = "f3ad29ed43606839819fe25c2c112880052d574fc2ca85816f34ba13a1a0ca03";
     const searchParams =
@@ -21,7 +21,7 @@ describe("obtainSessionKey", () => {
       179, 233, 213, 137, 143, 199, 1, 204, 2, 230, 43,
     ]);
 
-    const sessionKeyPair = await obtainSessionKeyPair(
+    const sessionKeyPair = await decryptSessionKeyPair(
       privateKey,
       new URLSearchParams(searchParams)
     );
