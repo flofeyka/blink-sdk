@@ -60,13 +60,14 @@ export class WebsocketClient implements JsonRpcClient {
 }
 
 export class WebsocketClientError extends Error {
-  readonly struct: Readonly<WebsocketClientError.Struct>;
+  readonly s: Readonly<WebsocketClientError.S>;
 
-  constructor(s: WebsocketClientError.Struct) {
+  constructor(s: WebsocketClientError.S) {
     switch (s.type) {
       case "InvalidSubscribeMethodReturnType": {
         super(
-          `WebsocketClientError::InvalidSubscribeMethodReturnType(ty = \`${s.ty}\`, e = \`${s.e}\`)`
+          `WebsocketClientError::InvalidSubscribeMethodReturnType(ty = \`${s.ty}\`, e = \`${s.e}\`)`,
+          { cause: s.e }
         );
         break;
       }
@@ -79,12 +80,12 @@ export class WebsocketClientError extends Error {
         break;
       }
     }
-    this.struct = Object.freeze(s);
+    this.s = Object.freeze(s);
   }
 }
 
 export namespace WebsocketClientError {
-  export type Struct =
+  export type S =
     | { type: "InvalidSubscribeMethodReturnType"; ty: string; e: z.ZodError }
     | { type: "InvalidUnsubscribeMethodReturnValue"; value: unknown };
 }

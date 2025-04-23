@@ -50,20 +50,20 @@ export namespace HttpClient {
 }
 
 export class HttpClientError extends Error {
-  readonly s: Readonly<HttpClientError.Struct>;
+  readonly s: Readonly<HttpClientError.S>;
 
-  constructor(s: HttpClientError.Struct) {
+  constructor(s: HttpClientError.S) {
     switch (s.tag) {
       case "Syntax": {
-        super(`HttpClientError::Syntax(e = ${s.e}, text = ${s.text})`);
+        super(`HttpClientError::Syntax(e = ${s.e}, text = ${s.text})`, { cause: s.e });
         break;
       }
       case "Zod": {
-        super(`HttpClientError::Zod(e = ${s.e})`);
+        super(`HttpClientError::Zod(e = ${s.e})`, { cause: s.e });
         break;
       }
       case "JsonRpc": {
-        super(`HttpClientError::Zod(e = ${s.e})`);
+        super(`HttpClientError::Zod(e = ${s.e})`, { cause: s.e });
         break;
       }
       case "ResultUndefined": {
@@ -80,7 +80,7 @@ export class HttpClientError extends Error {
 }
 
 export namespace HttpClientError {
-  export type Struct =
+  export type S =
     | { tag: "Syntax"; e: SyntaxError; text: string }
     | { tag: "Zod"; e: z.ZodError }
     | { tag: "JsonRpc"; e: JsonRpcError }
