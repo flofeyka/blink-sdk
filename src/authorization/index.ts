@@ -1,3 +1,5 @@
+import base64url from "base64url";
+import { Buffer } from "buffer";
 import elliptic, { type ec } from "elliptic";
 import { z } from "zod";
 
@@ -5,7 +7,7 @@ export async function initSession(): Promise<{ privateKey: string; url: string }
   const ec = new elliptic.ec("p256");
   const keyPair = ec.genKeyPair();
   const privateKey = keyPair.getPrivate("hex");
-  const publicKey = Buffer.from(keyPair.getPublic(true, "array")).toString("base64url");
+  const publicKey = base64url.encode(Buffer.from(keyPair.getPublic(true, "array")));
   return {
     privateKey,
     url: `https://t.me/magick_dev277_development3_bot?start=${publicKey}`,
@@ -18,12 +20,12 @@ export async function decryptSessionKeyPair(
 ): Promise<ec.KeyPair> {
   const ec = new elliptic.ec("p256");
 
-  const base64url = z.string().transform((t) => Buffer.from(t, "base64url"));
+  const base64urlSchema = z.string().transform((t) => base64url.toBuffer(t));
 
   const searchParamsSchema = z.object({
-    publicKey: base64url.transform((t) => ec.keyFromPublic(t)),
-    sessionKey: base64url,
-    iv: base64url,
+    publicKey: base64urlSchema.transform((t) => ec.keyFromPublic(t)),
+    sessionKey: base64urlSchema,
+    iv: base64urlSchema,
   });
 
   const { publicKey, sessionKey, iv } = searchParamsSchema.parse(
