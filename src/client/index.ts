@@ -34,6 +34,10 @@ export class BlinkClient {
     return new BlinkClient(client);
   }
 
+  async send(method: string, params: any[]): Promise<unknown> {
+    return this._client.send(method, params);
+  }
+
   async getNonce(): Promise<number> {
     return this._client.getNonce();
   }

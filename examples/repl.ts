@@ -16,6 +16,22 @@ async function main() {
   const client = BlinkClient.http(process.env.URL!, keyPair);
 
   console.log("nonce:", await client.getNonce());
+
+  while (true) {
+    const input = await readline.question("input: ");
+    if (input === "\\q") {
+      break;
+    } else {
+      const [method, params] = input.split(" ");
+      try {
+        const result = await client.send(method, JSON.parse(params));
+        console.log("result:", result);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }
+
   readline.close();
 }
 
