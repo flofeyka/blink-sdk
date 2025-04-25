@@ -22,9 +22,13 @@ async function main() {
     if (input === "\\q") {
       break;
     } else {
-      const [method, params] = input.split(" ");
+      const [method, json] = input.split(" ");
       try {
-        const result = await client.send(method, JSON.parse(params));
+        const params = JSON.parse(json);
+        const result =
+          typeof (<any>client)[method] === "function"
+            ? await (<any>client)[method](...params)
+            : await client.send(method, params);
         console.log("result:", result);
       } catch (e) {
         console.error(e);
