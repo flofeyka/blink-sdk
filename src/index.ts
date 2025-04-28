@@ -4,6 +4,10 @@ import { BlinkClient } from "./client";
 import { JsonRpcError } from "./jsonrpc";
 import { HttpClientError } from "./jsonrpc/http";
 import { WebsocketClientError } from "./jsonrpc/ws";
+import { TradesClient } from "./trades";
+
+export type * from "./client/schema";
+export type * from "./trades/schema";
 
 export {
   AuthorizationError,
@@ -12,5 +16,6 @@ export {
   HttpClientError,
   initSession,
   JsonRpcError,
+  TradesClient,
   WebsocketClientError,
 };
