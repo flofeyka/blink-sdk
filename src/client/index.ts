@@ -19,10 +19,19 @@ import schema, {
   WithdrawResponse,
 } from "./schema";
 
+const PUBLIC_METHODS = Object.freeze(["getUsersLeaderboard"]);
+
+const PRIVATE_NONCE_METHODS = Object.freeze([
+  "swap",
+  "withdraw",
+  "createLimitOrder",
+  "cancelLimitOrder",
+]);
+
 function getMethodKind(method: string): MethodKind {
-  if (method === "getUsersLeaderboard") {
+  if (PUBLIC_METHODS.includes(method)) {
     return MethodKind.Public;
-  } else if (method === "swap" || method === "withdraw") {
+  } else if (PRIVATE_NONCE_METHODS.includes(method)) {
     return MethodKind.PrivateNonce;
   } else {
     return MethodKind.Private;
