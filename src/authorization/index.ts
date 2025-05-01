@@ -38,7 +38,7 @@ export async function decryptSessionKeyPair(
 
   const sharedSecret = keyPair.derive(publicKey.getPublic());
 
-  const rawAesKey = await crypto.subtle.digest("SHA-256", sharedSecret.toBuffer());
+  const rawAesKey = await crypto.subtle.digest("SHA-256", sharedSecret.toArrayLike(Buffer));
 
   const aesKey = await crypto.subtle.importKey("raw", rawAesKey, { name: "AES-GCM" }, false, [
     "decrypt",
