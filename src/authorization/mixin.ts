@@ -44,7 +44,7 @@ function AuthorizationMixin<TCtor extends new (...args: any[]) => JsonRpcClient>
       }
 
       const nonce =
-        methodKind === MethodKind.PrivateNonce ? await this.getNonce() : Date.now() + 1000;
+        methodKind === MethodKind.PrivateNonce ? await this.getNonce() : Date.now() + 10000;
 
       const hash = await hashRequest(nonce, method, params);
 

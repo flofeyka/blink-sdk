@@ -24,7 +24,7 @@ describe("AuthorizationMixin", () => {
 
         const authorization = <string>options!.headers!["Authorization"]!;
 
-        const nonce = mockNow + 1000;
+        const nonce = mockNow + 10000;
         const hash = await hashRequest(nonce, method, params);
 
         const signature = keyPair.sign(hash);
