@@ -1,6 +1,6 @@
 import { configDotenv } from "dotenv";
 import { createInterface } from "node:readline/promises";
-import { AssetsClient } from "../src";
+import { AssetsClient, fetchMetadata } from "../src";
 
 async function main() {
   configDotenv();
@@ -19,11 +19,26 @@ async function main() {
       const [method, json] = input.split(" ");
       try {
         const params = JSON.parse(json);
-        const result =
-          typeof (<any>client)[method] === "function"
-            ? await (<any>client)[method](...params)
-            : await client.send(method, params);
-        console.log("result:", result);
+        if (method === "getAssetsInfo") {
+          // @ts-ignore
+          const assetsInfo = await client.getAssetsInfo(...params);
+          console.log("asssetsInfo:", assetsInfo);
+
+          await Promise.all(
+            assetsInfo.map(async (assetInfo) => {
+              if (assetInfo.uri !== undefined) {
+                const metadata = await fetchMetadata(assetInfo.uri);
+                console.log("metadata:", metadata);
+              }
+            })
+          );
+        } else {
+          const result =
+            typeof (<any>client)[method] === "function"
+              ? await (<any>client)[method](...params)
+              : await client.send(method, params);
+          console.log("result:", result);
+        }
       } catch (e) {
         console.error(e);
       }

@@ -11,6 +11,8 @@ export type * from "./assets/schema";
 export type * from "./client/schema";
 export type * from "./trades/schema";
 
+export { fetchMetadata, type Metadata } from "./assets/metadata";
+
 export {
   AssetsClient,
   AuthorizationError,
