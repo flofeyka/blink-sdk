@@ -1,6 +1,6 @@
 import { configDotenv } from "dotenv";
 import { createInterface } from "node:readline/promises";
-import { AssetsClient, fetchMetadata } from "../src";
+import { AssetsClient } from "../src";
 
 async function main() {
   configDotenv();
@@ -27,7 +27,7 @@ async function main() {
           await Promise.all(
             assetsInfo.map(async (assetInfo) => {
               if (assetInfo.uri !== undefined) {
-                const metadata = await fetchMetadata(assetInfo.uri);
+                const metadata = await client.getTokenMetadata(assetInfo.uri);
                 console.log("metadata:", metadata);
               }
             })

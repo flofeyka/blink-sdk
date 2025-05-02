@@ -1,6 +1,6 @@
 import { JsonRpcClient } from "../jsonrpc";
 import { HttpClient } from "../jsonrpc/http";
-import schema, { GetAssetsInfoParams, GetAssetsInfoResponse } from "./schema";
+import schema, { GetAssetsInfoParams, GetAssetsInfoResponse, TokenMetadata } from "./schema";
 
 export class AssetsClient {
   private constructor(private _client: JsonRpcClient) {}
@@ -13,6 +13,11 @@ export class AssetsClient {
   async getAssetsInfo(pubkeys: GetAssetsInfoParams): Promise<GetAssetsInfoResponse> {
     const result = await this._client.send("getAssetsInfo", [pubkeys]);
     return schema.getAssetsInfoResponse.parse(result);
+  }
+
+  async getTokenMetadata(uri: string): Promise<TokenMetadata> {
+    const result = await this._client.send("getTokenMetadata", [uri]);
+    return schema.tokenMetadata.parse(result);
   }
 
   async send(method: string, params: any[]): Promise<unknown> {

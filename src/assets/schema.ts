@@ -52,6 +52,18 @@ export type GetAssetsInfoResponse = Checked<typeof getAssetsInfoResponse, AssetI
 
 export type GetAssetsInfoParams = string[];
 
+const tokenMetadata = z
+  .object({
+    name: z.string(),
+    symbol: z.string(),
+    description: z.string(),
+    image: z.string(),
+  })
+  .partial();
+
+export type TokenMetadata = z.infer<typeof tokenMetadata>;
+
 export default {
   getAssetsInfoResponse,
+  tokenMetadata,
 };
