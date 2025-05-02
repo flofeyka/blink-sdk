@@ -1,6 +1,5 @@
 import { z } from "zod";
-
-type Checked<TSchema extends z.ZodType, TType> = TType extends z.infer<TSchema> ? TType : never;
+import { Checked } from "../utils";
 
 const tipPercentile = z.union([
   z.literal("_25"),
@@ -138,7 +137,7 @@ export type Asset = z.infer<typeof asset>;
 const getPositionsResponse = asset.array();
 export type GetPositionsResponse = Asset[];
 
-const assetInfo = z.object({
+const assetInfoClient = z.object({
   mint: z.string(),
   name: z.string(),
   symbol: z.string(),
@@ -149,7 +148,7 @@ const assetInfo = z.object({
   liquidity: z.string().nullable(),
   market_cap: z.string(),
 });
-export type AssetInfo = z.infer<typeof assetInfo>;
+export type AssetInfoClient = z.infer<typeof assetInfoClient>;
 
 const openOrderAccount = z.object({
   borrowMakingAmount: z.string().transform(BigInt),
@@ -189,14 +188,14 @@ export type OpenOrder = Checked<
 
 const getOrdersResponse = z.object({
   orders: openOrder.array(),
-  token_infos: assetInfo.array(),
+  token_infos: assetInfoClient.array(),
 });
 
 export type GetOrdersResponse = Checked<
   typeof getOrdersResponse,
   {
     orders: OpenOrder[];
-    token_infos: AssetInfo[];
+    token_infos: AssetInfoClient[];
   }
 >;
 

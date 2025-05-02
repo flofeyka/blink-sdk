@@ -1,6 +1,5 @@
 import { z } from "zod";
-
-type Checked<TSchema extends z.ZodType, TType> = TType extends z.infer<TSchema> ? TType : never;
+import { Checked } from "../utils";
 
 export const enum TradeDirection {
   AtoB = 0,
